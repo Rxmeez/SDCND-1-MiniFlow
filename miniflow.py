@@ -1,3 +1,4 @@
+import numpy as np
 class Node(object):
     def __init__(self, inbound_nodes=[]):
         # Properties will go here!
@@ -63,6 +64,27 @@ class Mul(Node):
         Multiply the values that get passed into the Mul Class
         """
         self.value = reduce(lambda x, y: x * y, map((lambda x: x.value), self.inbound_nodes))
+
+class Linear(Node):
+    def __init__(self, inputs, weights, bias):
+        Node.__init__(self, [inputs, weights, bias])
+            # NOTE: The weights and bias properties here are not
+            # numbers, but rather references to other nodes.
+            # The weight and bias values are stored within the
+            # respective nodes.
+
+        def forward(self):
+            """
+            Set self.value to the value of the Linear function output
+            """
+            inputs = self.inbound_nodes[0].value
+            weights = self.inbound_nodes[1].value
+            bias = self.inbound_nodes[2].value
+            self.value = bias
+            for x, w in zip(inputs, weights):
+                self.value += x * w
+            pass
+
 
 def topological_sort(feed_dict):
     """
