@@ -24,6 +24,7 @@ class Node(object):
         """
         raise NotImplemented
 
+
 class Input(Node):
     def __init__(self):
         # An Input node has no inbound nodes,
@@ -43,6 +44,7 @@ class Input(Node):
             # Overwrite the value if one is passed in
             if value is not None:
                 self.value = value
+
 
 class Add(Node):
     def __init__(self, *inputs):
@@ -64,6 +66,7 @@ class Mul(Node):
         Multiply the values that get passed into the Mul Class
         """
         self.value = reduce(lambda x, y: x * y, map((lambda x: x.value), self.inbound_nodes))
+
 
 class Linear(Node):
     def __init__(self, inputs, weights, bias):
@@ -93,6 +96,7 @@ class Linear(Node):
             # Z = X*W + b
             self.value = np.dot(X, W) + b
 
+
 class Sigmoid(Node):
     def __init__(self, node):
         Node.__init__(self, [node])
@@ -103,6 +107,38 @@ class Sigmoid(Node):
 
     def forward(self):
         self.value = self._sigmoid(self.inbound_nodes[0].value)
+
+
+class MSE(Node):
+    def __init__(self, y, a):
+        """
+        The mean squared error cost function.
+        Should be used as the last node for a network
+        """
+        Node.__init__(self, [y, a])
+
+    def forward(self):
+        """
+        Calculates the mean squared error.
+        """
+        # NOTE: We reshape these to avoid possible matrix/vector broadcast
+        # errors.
+        #
+        # For example, if we subtract an array of shape (3,) from an array of
+        # shape (3, 1) we get an array of shape (3, 3) as the result when we
+        # want an array of shape (3, 1) instead
+        #
+        # Making both arrays (3, 1) insures the result is (3, 1) and does
+        # an elementwise subtraction as expected.
+        y = self.inbound_nodes[0].value.reshape(-1, 1)
+        a = self.inbound_nodes[1].value.reshape(-1, 1)
+
+        self.value = np.sum((1/len(y))* np.square(y - a))
+        # NOTE: Another method
+        # m = self.inbound_nodes[0].value.shape[0]
+        # diff = y - a
+        # self.value = np.mean(diff**2)
+
 
 def topological_sort(feed_dict):
     """
