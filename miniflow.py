@@ -77,13 +77,21 @@ class Linear(Node):
             """
             Set self.value to the value of the Linear function output
             """
-            inputs = self.inbound_nodes[0].value
-            weights = self.inbound_nodes[1].value
-            bias = self.inbound_nodes[2].value
-            self.value = bias
-            for x, w in zip(inputs, weights):
-                self.value += x * w
-            pass
+            # inputs = self.inbound_nodes[0].value
+            # weights = self.inbound_nodes[1].value
+            # bias = self.inbound_nodes[2].value
+            # self.value = bias
+            # for x, w in zip(inputs, weights):
+            #    self.value += x * w
+
+            """
+            Set the value of this node to the linear transform output
+            """
+            X = self.inbound_nodes[0].value
+            W = self.inbound_nodes[1].value
+            b = self.inbound_nodes[2].value
+            # Z = X*W + b
+            self.value = np.dot(X, W) + b
 
 
 def topological_sort(feed_dict):
