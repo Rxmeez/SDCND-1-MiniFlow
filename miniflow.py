@@ -1,28 +1,41 @@
 import numpy as np
+
 class Node(object):
+    """
+    Base class for nodes in the network
+
+    Arguments:
+        `inbound_nodes`: A list of nodes with edges into this node.
+    """
     def __init__(self, inbound_nodes=[]):
-        # Properties will go here!
-
-        # Node(s) from which this Node receives values
+        """
+        Node's constructor (runs when the object is instantiated). Sets properties that all nodes need
+        """
+        # A list of nodes with edges into this node
         self.inbound_nodes = inbound_nodes
-
-        # Node(s) to which this Node passes values
+        # The eventual value of this node. Set by running the forward()
+        # method.
+        self.value = None
+        # A list of nodes that this node outputs to.
         self.outbound_nodes = []
-
-        # For each inbound Node here, add this Node as an outbound Node to _that_ Node.
+        # Keys are the inputs to this node and their values are the
+        # partials of this node with respect to that input.
+        self.gradients = {}
+        # Sets this node as an outbound node for all of this node's inputs
         for n in self.inbound_nodes:
             n.outbound_nodes.append(self)
 
-        # A calculated value, initialized to None
-        self.value = None
-
     def forward(self):
         """
-        Forward propagation.
-
-        Compute the output value based on 'inbound_nodes' and store the result in self.value.
+        Every node that uses this class as a base class will need to define its own `forward` method.
         """
-        raise NotImplemented
+        raise NotImplementedError
+
+    def backward(self):
+        """
+        Every node that uses this class as a base class will need to define its own `backward` method.
+        """
+        raise NotImplementedError
 
 
 class Input(Node):
@@ -106,8 +119,22 @@ class Sigmoid(Node):
         return 1/(1 + np.exp(-self.x))
 
     def forward(self):
+        """
+        Perform the sigmoid function and set the value
+        """
         self.value = self._sigmoid(self.inbound_nodes[0].value)
 
+    def backward(self):
+        """
+        Calculates the gradient using the derivative of the sigmoid function
+        """
+        # Initialize the gradients to 0
+        self.gradients = {n: np.zeros_like(n.like) for n in self.inbound_nodes}
+        # Sum the derivative with respect to the input over all the outputs.
+        for n in self.outbound_nodes:
+            grad_cost = n.gradients[self]
+            sigmoid = self.value
+            self.gradients[self.inbound_nodes[0]] += sigmoid * (1 - sigmoid) *grad_cost
 
 class MSE(Node):
     def __init__(self, y, a):
@@ -197,3 +224,18 @@ def forward_pass(output_node, sorted_nodes):
         n.forward()
 
     return output_node.value
+
+def forward_and_backward(graph):
+    """
+    Performs a forward pass and a backward pass through a list of sorted nodes.
+
+    Arguments:
+    `graph`: The result of calling `topological_sort`
+    """
+    # Forward pass
+    for n in graph:
+        n.forward()
+
+    # Backward pass
+    for n in graph[::-1]:
+        n.backward()
